@@ -3,4 +3,4 @@ all: autograder.zip
 .PHONY: autograder.zip
 
 autograder.zip:
-	zip -r autograder.zip .ssh run_autograder setup.sh scripts/ src/ run_tests.py
+	zip -r autograder.zip .ssh run_autograder setup.sh scripts/

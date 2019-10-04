@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+mv /autograder/.ssh ~/
+
 ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
 
 apt-get install -y python python-pip python-dev
