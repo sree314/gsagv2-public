@@ -4,7 +4,11 @@
 
 AG=$AGROOT/autograder/
 
-# update repositories
+# update assignment repository
+pushd $AG/source/assignment
+git pull
+popd
 
-# 
+
+
 

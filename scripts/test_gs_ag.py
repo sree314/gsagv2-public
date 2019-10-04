@@ -13,6 +13,7 @@ import zipfile
 import tempfile
 import os
 import shutil
+import subprocess
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description="Test autograder submission")
@@ -33,10 +34,14 @@ if __name__ == "__main__":
     for i in [agd, srcd, subd, resd]:
         os.mkdir(i)
 
-    azip = zipfile.ZipFile(args.archive)
-    azip.extractall(srcd)
+    # these destroy permissions
+    #azip = zipfile.ZipFile(args.archive)
+    #azip.extractall(srcd)
 
-    szip = zipfile.ZipFile(args.submission)
-    szip.extractall(subd)
+    #szip = zipfile.ZipFile(args.submission)
+    #szip.extractall(subd)
+
+    subprocess.check_call(['unzip', '-q', args.archive, '-d', srcd])
+    subprocess.check_call(['unzip', '-q', args.submission, '-d', subd])
 
     shutil.copy(os.path.join(srcd, "run_autograder"), agd)
