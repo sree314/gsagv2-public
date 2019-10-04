@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+
+# Set up autograder files
+
+AG=$AGROOT/autograder/
+
+if [ ! -f $AG/submission/a1/PACKAGER-INFO.txt ]; then
+	echo "ERROR: Submission does not seem to have been prepared using package.py"
+	exit 1;
+fi;
+
+# copy user files to assignment src directory
+rm -f $AG/source/src/parity/parity.c
+
+if cp $AG/submission/a1/parity/parity.c $AG/source/src/parity/parity.c; then
+	# parity checks
+	pushd $AG/source/src/parity
+	cbmc --drop-unused-functions --function check_all parity_cbmc.c parity.c --unwind 10 --json-ui > parity_trace.json
+	$AG/source/scripts/cbmc_trace.py parity_trace.json parity_cbmc.c parity_results.json
+	popd
+fi;
+
+# copy mbstr solutions to
+rm -f $AG/source/src/mbstr/mbstr.c
+if cp $AG/submission/a1/mbstr/mbstr.c $AG/source/src/mbstr/mbstr.c; then
+	pushd $AG/source/src/mbstr
+
+	funcs=("check_encode" "check_decode")
+
+	for f in "${funcs[@]}"
+	do
+		O=result_${f}
+		cbmc --json-ui --drop-unused-functions --unwind 10 --function $f mbstr_cbmc.c mbstr.c > ${O}_trace.json
+
+		$AG/source/scripts/cbmc_trace.py ${O}_trace.json mbstr_cbmc.c ${O}_results.json
+	done
+
+	# this does not give good counter-examples, but is fast
+	funcs=( "check_mbstr_length" )
+	for f in "${funcs[@]}"
+	do
+		O=result_${f}
+		cbmc --z3 --json-ui --drop-unused-functions --unwind 10 --function $f mbstr_cbmc.c mbstr.c > ${O}_trace.json
+
+		$AG/source/scripts/cbmc_trace.py ${O}_trace.json mbstr_cbmc.c ${O}_results.json
+	done
+fi;
+
+$AG/source/scripts/trace2results.py $AG/source/src/a1.yaml $AG/source/src/parity/parity_results.json  $AG/source/src/mbstr/result_*_results.json
+
+mv results.json $AG/results
+
+#cd $AG/source/src/
+
+#$AG/source/src/runner.py
+
+#mv result $AG/results/results.json
+
+
