@@ -9,6 +9,9 @@ pushd $AG/source/assignment
 git pull
 popd
 
+# run assignment-specific checker
+$AG/source/assignment/run_checker
+
 
 
 
