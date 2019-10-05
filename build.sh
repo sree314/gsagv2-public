@@ -3,7 +3,7 @@
 P=`dirname $0`
 
 if [ $# -lt 1 ]; then
-	echo Usage: $0 path-to-assignment
+	echo Usage: $0 path-to-assignment [extra-data-dir]
 	exit 1;
 fi;
 
@@ -21,6 +21,13 @@ if [ -d "$1" ]; then
 
 	cp -a "$1" "$T/"
 	mv $T/`basename "$1"` $T/assignment
+
+	if [ ! -z "$2" ]; then
+		if ! cp -a "$2" "$T/" ; then
+			echo "ERROR: Could not copy '$2'"
+			exit 1;
+		fi;
+	fi;
 
 	pushd "$T"
 	zip -r autograder.zip *
