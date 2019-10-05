@@ -45,3 +45,16 @@ if __name__ == "__main__":
     subprocess.check_call(['unzip', '-q', args.submission, '-d', subd])
 
     shutil.copy(os.path.join(srcd, "run_autograder"), agd)
+
+    os.chdir(agd)
+    os.environ["AGROOT"] = nd
+    print(f"Switching to {agd} with AGROOT={nd}. Type `exit` to quit. Directory will be deleted when process exits.")
+
+    ret = os.spawnlp(os.P_WAIT, "bash", "bash", "-i")
+
+    if ret == 0: # not sure why exit returns 1
+        print(f"Removing {agd}")
+        shutil.rmtree(nd)
+    else:
+        # you can reach here using `exit` in the shell or if the run_autograder script fails
+        print(f"Return code={ret}, {agd} was not removed.")
