@@ -49,6 +49,7 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(description="Test autograder submission")
     p.add_argument("archive", help="Autograder archive file")
     p.add_argument("submission", help="Student submission" )
+    p.add_argument("--sm", dest="metadata", help="Submission metadata file")
 
     args = p.parse_args()
 
@@ -76,7 +77,10 @@ if __name__ == "__main__":
 
     shutil.copy(os.path.join(srcd, "run_autograder"), agd)
 
-    create_submission_metadata(agd)
+    if args.metadata:
+        shutil.copyfile(args.metadata, os.path.join(agd, "submission_metadata.json"))
+    else:
+        create_submission_metadata(agd)
 
     os.chdir(agd)
     os.environ["AGROOT"] = nd
