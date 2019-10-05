@@ -14,6 +14,36 @@ import tempfile
 import os
 import shutil
 import subprocess
+import json
+from datetime import datetime, timedelta
+
+def create_submission_metadata(p):
+    smd = {'id': 1,
+           'created_at': datetime.now().isoformat(),
+           'assignment': {
+               'due_date': (datetime.now() + timedelta(days=7)).isoformat(),
+               'group_size': None,
+               'group_submission': False,
+               'id': 2,
+               'course_id': 3,
+               'late_due_date': None,
+               'release_data': (datetime.now() - timedelta(days=1)).isoformat(),
+               'title': 'Test Assignment',
+               'total_points': "10.0",
+               'submission_method': 'upload',
+           },
+           'users': [
+               {
+                   'email': 'benbitdiddle@example.com',
+                   'id': 1,
+                   'name': 'Ben Bitdiddle'
+               }
+           ],
+           'previous_submissions': []
+           }
+
+    with open(os.path.join(p, 'submission_metadata.json'), 'w') as f:
+        f.write(json.dumps(smd, indent=4))
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description="Test autograder submission")
@@ -45,6 +75,8 @@ if __name__ == "__main__":
     subprocess.check_call(['unzip', '-q', args.submission, '-d', subd])
 
     shutil.copy(os.path.join(srcd, "run_autograder"), agd)
+
+    create_submission_metadata(agd)
 
     os.chdir(agd)
     os.environ["AGROOT"] = nd
