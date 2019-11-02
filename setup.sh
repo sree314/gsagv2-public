@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-mv /autograder/source/ssh/{config,deploy_*} ~/.ssh/
+mv /autograder/source/ssh/{config,deploy*} ~/.ssh/
 
 ssh-keyscan -t rsa github.com >> ~/.ssh/known_hosts
 

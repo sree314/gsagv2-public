@@ -8,6 +8,7 @@ if [ $# -lt 1 ]; then
 fi;
 
 if [ -d "$1" ]; then
+	ANAME=`basename "$1"`
 	make
 	T0=`mktemp -d`
 	T=$T0/autograder
@@ -20,7 +21,8 @@ if [ -d "$1" ]; then
 	fi;
 
 	cp -a "$1" "$T/"
-	mv $T/`basename "$1"` $T/assignment
+	mv $T/$ANAME $T/assignment
+	realpath "$1" > $T/upstream
 
 	if [ ! -z "$2" ]; then
 		if ! cp -a "$2" "$T/" ; then
@@ -30,10 +32,15 @@ if [ -d "$1" ]; then
 	fi;
 
 	pushd "$T"
+	if [ -d "assignment/ssh" ]; then
+		cp assignment/ssh/* ssh/
+		rm -rf assignment/ssh
+	fi;
+
 	zip -r autograder.zip *
 	popd
 
-	cp "$T/autograder.zip" ./autograder-upload.zip
+	cp "$T/autograder.zip" ./autograder-$ANAME-upload.zip
 
 	rm -rf "$T0"
 else
