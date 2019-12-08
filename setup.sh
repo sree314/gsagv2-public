@@ -16,3 +16,6 @@ wget http://mirrors.kernel.org/ubuntu/pool/universe/c/cbmc/cbmc_5.10-5_amd64.deb
 
 dpkg -i cbmc_5.10-5_amd64.deb
 
+if [ -f /autograder/source/setup_assignment.sh ]; then
+	source /autograder/source/setup_assignment.sh
+fi;
