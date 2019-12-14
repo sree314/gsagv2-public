@@ -67,7 +67,7 @@ def smd_from_export(smd_export, submission_id):
     for n in smd_export[':submitters']:
         smd['users'].append({'email': n[':email'],
                              'name': n[':name'],
-                             'sid': n[':sid']})
+                             'id': n[':sid']})
 
     #TODO: previous submission
 
@@ -106,11 +106,32 @@ def get_submission_metadata_yaml(json_smd):
 
 def update_autograder_offline(nd):
     agd = os.path.join(nd, "autograder")
+    os.chdir(agd)
+    os.environ["AGROOT"] = nd
+    subprocess.check_call(["source/update.sh"])
 
 def run_autograder(nd):
     agd = os.path.join(nd, "autograder")
     os.chdir(agd)
     os.environ["AGROOT"] = nd
+    print(f"Switching to {agd} with AGROOT={nd}. Type `exit` to quit. Directory will be deleted when process exits.")
+
+    ret = os.spawnlp(os.P_WAIT, "bash", "bash", "-i")
+
+    if ret == 0: # not sure why exit returns 1
+        print(f"Removing {agd}")
+        shutil.rmtree(nd)
+    else:
+        # you can reach here using `exit` in the shell or if the run_autograder script fails
+        print(f"Return code={ret}, {agd} was not removed.")
+
+def run_autograder_offline(nd, offlined):
+    agd = os.path.join(nd, "autograder")
+    os.chdir(agd)
+    os.environ["AGROOT"] = nd
+    os.environ["OFFLINE_AUTOGRADER"] = "1"
+    os.environ["OFFLINE_PATH"] = offlined
+
     print(f"Switching to {agd} with AGROOT={nd}. Type `exit` to quit. Directory will be deleted when process exits.")
 
     ret = os.spawnlp(os.P_WAIT, "bash", "bash", "-i")
@@ -185,6 +206,7 @@ if __name__ == "__main__":
     p = argparse.ArgumentParser(description="Run offline tests on submissions")
     p.add_argument("archive", help="Autograder archive file")
     p.add_argument("exportdir", help="Gradescope submission export archive directory") #need to change this to be more general?
+    p.add_argument("offlinedir", help="Directory to store offline results")
     p.add_argument("submission_id", nargs="*", help="Submissions to test")
 
     args = p.parse_args()
@@ -201,7 +223,11 @@ if __name__ == "__main__":
 
     for sid in args.submission_id:
         md = smd[f'submission_{sid}']
-        json = smd_from_export(md, int(sid))
-        archive = repack_export_submission(args.exportdir, sid, json)
-        print(archive)
+        jsonmd = smd_from_export(md, int(sid))
+        submission = repack_export_submission(args.exportdir, sid, jsonmd)
+
+        nd = create_autograder_env(args.archive, submission, jsonmd)
+        print(f"Autograder environment created in {nd}")
+        update_autograder_offline(nd)
+        run_autograder_offline(nd, args.offlinedir)
         break
