@@ -106,17 +106,18 @@ def get_submission_metadata_yaml(json_smd):
 
 def update_autograder_offline(nd):
     agd = os.path.join(nd, "autograder")
-    os.chdir(agd)
     os.environ["AGROOT"] = nd
-    subprocess.check_call(["source/update.sh"])
+    subprocess.check_call(["source/update.sh"], cwd=agd)
 
 def run_autograder(nd):
     agd = os.path.join(nd, "autograder")
+    cwd = os.getcwd()
     os.chdir(agd)
     os.environ["AGROOT"] = nd
     print(f"Switching to {agd} with AGROOT={nd}. Type `exit` to quit. Directory will be deleted when process exits.")
 
     ret = os.spawnlp(os.P_WAIT, "bash", "bash", "-i")
+    os.chdir(cwd)
 
     if ret == 0: # not sure why exit returns 1
         print(f"Removing {agd}")
@@ -127,6 +128,8 @@ def run_autograder(nd):
 
 def run_autograder_offline(nd, offlined):
     agd = os.path.join(nd, "autograder")
+
+    cwd = os.getcwd()
     os.chdir(agd)
     os.environ["AGROOT"] = nd
     os.environ["OFFLINE_AUTOGRADER"] = "1"
@@ -135,6 +138,7 @@ def run_autograder_offline(nd, offlined):
     print(f"Switching to {agd} with AGROOT={nd}. Type `exit` to quit. Directory will be deleted when process exits.")
 
     ret = os.spawnlp(os.P_WAIT, "bash", "bash", "-i")
+    os.chdir(cwd)
 
     if ret == 0: # not sure why exit returns 1
         print(f"Removing {agd}")
@@ -142,6 +146,29 @@ def run_autograder_offline(nd, offlined):
     else:
         # you can reach here using `exit` in the shell or if the run_autograder script fails
         print(f"Return code={ret}, {agd} was not removed.")
+
+def run_autograder_offline_auto(nd, offlined, sid):
+    agd = os.path.join(nd, "autograder")
+
+    os.environ["AGROOT"] = nd
+    os.environ["OFFLINE_AUTOGRADER"] = "1"
+    os.environ["OFFLINE_PATH"] = offlined
+
+    #hout, outputfile = tempfile.mkstemp()
+
+    try:
+        output = subprocess.check_output(["./run_autograder"],
+                                         stdin=subprocess.DEVNULL,
+                                         stderr=subprocess.STDOUT,
+                                         cwd=agd)
+    except CalledProcessError as e:
+        output = e.output
+
+    shutil.rmtree(nd)
+
+    run = datetime.utcnow().isoformat(timespec='seconds')
+    with open(os.path.join(offlined, f"{sid}-{run}.log"), "wb") as f:
+        f.write(output)
 
 def get_export_submissions_md(exportdir):
     if os.path.exists(os.path.join(exportdir, "submission_metadata_lite.yml")):
@@ -202,8 +229,18 @@ def repack_export_submission(exportdir, subid, json_smd, output = None):
 
     return output
 
+def ran_successfully(metadata):
+    if ':results' in metadata:
+        if metadata[':results']['execution_time'] is not None:
+            if "Your submission timed out. It took longer than 600 seconds to run." in metadata[':results']['output']:
+                return False
+
+    return True
+
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description="Run offline tests on submissions")
+    p.add_argument("-n", dest="dryrun", action="store_true", help="Dry-run")
+    p.add_argument("-a", dest="auto", action="store_true", help="Run automatically")
     p.add_argument("archive", help="Autograder archive file")
     p.add_argument("exportdir", help="Gradescope submission export archive directory") #need to change this to be more general?
     p.add_argument("offlinedir", help="Directory to store offline results")
@@ -221,13 +258,23 @@ if __name__ == "__main__":
     if not len(args.submission_id):
         args.submission_id = submission_ids
 
+    not_run = []
     for sid in args.submission_id:
         md = smd[f'submission_{sid}']
-        jsonmd = smd_from_export(md, int(sid))
-        submission = repack_export_submission(args.exportdir, sid, jsonmd)
+        if ran_successfully(md):
+            jsonmd = smd_from_export(md, int(sid))
+            if args.dryrun: continue
 
-        nd = create_autograder_env(args.archive, submission, jsonmd)
-        print(f"Autograder environment created in {nd}")
-        update_autograder_offline(nd)
-        run_autograder_offline(nd, args.offlinedir)
-        break
+            submission = repack_export_submission(args.exportdir, sid, jsonmd)
+            nd = create_autograder_env(args.archive, submission, jsonmd)
+            print(f"Autograder environment created in {nd}")
+            update_autograder_offline(nd)
+            if args.auto:
+                run_autograder_offline_auto(nd, args.offlinedir, sid)
+            else:
+                run_autograder_offline(nd, args.offlinedir)
+        else:
+            not_run.append(sid)
+
+    if len(not_run) > 0:
+        print(f"Did not run: {not_run}")
