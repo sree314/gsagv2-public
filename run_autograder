@@ -9,6 +9,8 @@ pushd $AG/source/assignment
 git pull
 popd
 
+export PYTHONPATH=$AG/source/assignment/checkerutils:$PYTHONPATH
+
 # run assignment-specific checker
 $AG/source/assignment/run_checker
 
