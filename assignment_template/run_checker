@@ -48,7 +48,7 @@ if __name__ == "__main__":
     env = gs.GSEnv(agroot = os.environ['AGROOT'] if 'AGROOT' in os.environ else '/')
 
     # load submission metadata
-    sd = gs.GSSubmissionMetadata(env.SUBMISSION_METADATA)
+    sd = gs.GSSubmissionMetadata(env)
     sd.read()
 
     logger.info(f"Beginning testing for student {sd.users[0].name} ({sd.users[0].id})")

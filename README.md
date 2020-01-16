@@ -88,7 +88,7 @@ on exit it will delete the contents of this temporary directory. You
 can always prevent autodeletion by executing `exit 1`.
 
 As you're testing, if you make changes to the source code in
-`/path/to/a1`, you can run the `scripts/update.sh` script to update
+`/path/to/a1`, you can run the `source/update.sh` script to update
 the autograder _in situ_.
 
 ## Running offline tests

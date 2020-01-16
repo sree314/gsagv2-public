@@ -123,24 +123,25 @@ class GSResults(object):
         d = self.to_dict()
 
         #TODO: check for errors in results.json file
-        if 'score' not in d:
+        if 'score' not in d and 'tests' in d:
             for t in d['tests']:
                 if 'score' not in t:
                     raise ValueError('results.json does not contain scores')
 
         # improve UI
-        for t in d['tests']:
-            if 'visibility' in t and t['visibility'] != VIS_VISIBLE:
-                v = t['visibility']
+        if 'tests' in d:
+            for t in d['tests']:
+                if 'visibility' in t and t['visibility'] != VIS_VISIBLE:
+                    v = t['visibility']
 
-                if v == VIS_AFTER_DUE_DATE:
-                    v = "After Due Date"
-                elif v == VIS_AFTER_PUBLISHED:
-                    v = "After Published"
-                elif v == VIS_HIDDEN:
-                    v = "Hidden"
+                    if v == VIS_AFTER_DUE_DATE:
+                        v = "After Due Date"
+                    elif v == VIS_AFTER_PUBLISHED:
+                        v = "After Published"
+                    elif v == VIS_HIDDEN:
+                        v = "Hidden"
 
-                t['name'] = t['name'] + f"(Visibility: {v})"
+                    t['name'] = t['name'] + f"(Visibility: {v})"
 
         return json.dumps(d, indent=4)
 
