@@ -19,4 +19,6 @@ if mkdir -p "$DST"; then
 	if [ ! -f "$DST/ssh/deploy_key" ]; then
 		mkdir -p "$DST/ssh" &&  ssh-keygen -N "" -f "$DST/ssh/deploy_key"
 	fi;
+
+	pushd "$DST"; git init && git add . &&  git commit -am 'Initial commit'; popd
 fi;
