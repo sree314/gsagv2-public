@@ -1,0 +1,93 @@
+#!/usr/bin/env python3
+
+import sys
+import os
+import logging
+import argparse
+import json
+from pathlib import Path
+
+from checkerutils import gs
+import checker
+
+logger = logging.getLogger(__name__)
+
+def test_package_py(env, ziproot):
+    sd = env.SUBMISSION_PATH / ziproot / 'PACKAGER-INFO.txt'
+
+    if sd.exists():
+        return True
+    else:
+        logger.error(f"Couldn't find {sd}.")
+        env.results.add_output("package.py sanity check failed. No PACKAGER-INFO.txt found. Did you use package.py to prepare this submission?")
+        return False
+
+if __name__ == "__main__":
+    p = argparse.ArgumentParser(description="Run checker")
+    p.add_argument("--debug", action="store_true")
+    p.add_argument("-l", dest="level",
+                   help="Set logging level", choices=['INFO', 'DEBUG'], default='INFO')
+
+    args = p.parse_args()
+
+    if args.debug or 'AGDEBUG' in os.environ:
+        import pdb
+        pdb.set_trace()
+
+    rootLogger = logging.getLogger('')
+
+    ch = logging.StreamHandler()
+    ch.setFormatter(logging.Formatter('%(name)s: %(levelname)s: %(message)s'))
+    rootLogger.addHandler(ch)
+
+    if args.level == 'DEBUG':
+        rootLogger.setLevel(logging.DEBUG)
+    elif args.level == 'INFO':
+        rootLogger.setLevel(logging.INFO)
+
+    env = gs.GSEnv(agroot = os.environ['AGROOT'] if 'AGROOT' in os.environ else '/')
+
+    # load submission metadata
+    sd = gs.GSSubmissionMetadata(env.SUBMISSION_METADATA)
+    sd.read()
+
+    logger.info(f"Beginning testing for student {sd.users[0].name} ({sd.users[0].id})")
+    env.metadata = sd
+    logger.debug(json.dumps(env.metadata._json))
+
+    # create results.json
+    r = gs.GSResults(env.RESULTS_JSON)
+    env.results = r
+
+    # create checker, and initialize results
+    chkr = checker.get_checker(env)
+    chkr.init_results(env)
+
+    # check packager
+    if not test_package_py(env, checker.ZIP_ROOT):
+        logger.debug('run_checker sanity checks failed')
+        logger.info('assignment package sanity_checks() stage finished')
+        r.write()
+        sys.exit(0)
+
+    if not chkr.sanity_checks(env):
+        logger.debug('assignment checker sanity checks failed')
+        logger.info('assignment sanity_checks() stage finished')
+        r.write()
+        sys.exit(0)
+
+    if not chkr.prepare(env):
+        logger.debug('assignment checker prepare stage failed')
+        logger.info('assignment prepare() stage finished')
+        r.write()
+        sys.exit(0)
+
+    if not chkr.check(env):
+        logger.debug('assignment checker check stage failed')
+        logger.info('assignment check() stage finished')
+        r.write()
+        sys.exit(0)
+
+    logger.info('assignment checker run finished')
+    r.write()
+    sys.exit(1) #TODO: why?
