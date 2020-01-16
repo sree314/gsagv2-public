@@ -73,7 +73,9 @@ if __name__ == "__main__":
     #szip.extractall(subd)
 
     subprocess.check_call(['unzip', '-q', args.archive, '-d', srcd])
-    subprocess.check_call(['unzip', '-q', args.submission, '-d', subd])
+
+    if args.submission != "/dev/null":
+        subprocess.check_call(['unzip', '-q', args.submission, '-d', subd])
 
     shutil.copy(os.path.join(srcd, "run_autograder"), agd)
 
