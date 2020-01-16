@@ -4,7 +4,7 @@
 #
 # Tools to run an external command.
 #
-# Author: Sreepathi pai
+# Author: Sreepathi Pai
 #
 # Copyright (c) 2019, 2020, Sreepathi Pai
 
