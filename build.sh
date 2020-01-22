@@ -9,11 +9,11 @@ fi;
 
 if [ -d "$1" ]; then
 	ANAME=`basename "$1"`
-	make
+	make -C "$P" || exit 1;
 	T0=`mktemp -d`
 	T=$T0/autograder
 	mkdir $T
-	unzip autograder.zip -d $T/
+	unzip $P/autograder.zip -d $T/
 
 	if [ -d "$T/assignment" ]; then
 		echo "ERROR: There already exists a directory called 'assignment'"
