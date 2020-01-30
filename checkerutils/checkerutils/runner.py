@@ -11,11 +11,13 @@
 import subprocess
 import logging
 from collections import namedtuple
+import tempfile
+import os
 
 MAX_OUTPUT = 0
 logger = logging.getLogger(__name__)
 
-RunResult = namedtuple('RUN_RESULT', 'success returncode output exception processobj outfile errfile')
+RunResult = namedtuple('RUN_RESULT', 'success returncode output errors exception processobj outfile errfile')
 
 def shorten(output):
     if MAX_OUTPUT == 0:
@@ -35,6 +37,8 @@ def safe_read(f):
 
 def run(cmd, *args, **kwargs):
     assert type(cmd) is not str
+
+    cmd = [str(s) for s in cmd]
 
     command = " ".join(cmd)
 
