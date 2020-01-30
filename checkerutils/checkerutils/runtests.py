@@ -98,3 +98,5 @@ if __name__ == "__main__":
     import gs
 
     t = RunTest(gs.GSTest("Test"), "Some tests", runner.run(['true']))
+    t.process()
+    print(t.test.output)
