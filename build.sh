@@ -8,6 +8,12 @@ if [ $# -lt 1 ]; then
 fi;
 
 if [ -d "$1" ]; then
+	changes=`git -C "$1" status --porcelain=v2 | wc -l`
+	if [ "$changes" -gt 0 ]; then
+		echo "ERROR: Directory '$1' contains an unclean working tree. "
+		exit 1;
+	fi;
+
 	ANAME=`basename "$1"`
 	make -C "$P" || exit 1;
 	T0=`mktemp -d`
@@ -23,6 +29,7 @@ if [ -d "$1" ]; then
 	cp -a "$1" "$T/"
 	mv $T/$ANAME $T/assignment
 	realpath "$1" > $T/upstream
+	date > $T/build_timestamp
 
 	if [ ! -z "$2" ]; then
 		if ! cp -a "$2" "$T/" ; then
