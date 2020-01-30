@@ -11,6 +11,8 @@ popd
 
 export PYTHONPATH=$AG/source/assignment/checkerutils:$PYTHONPATH
 
+echo "BUILD STAMP: `cat $AG/source/build_timestamp`"
+
 # run assignment-specific checker
 $AG/source/assignment/run_checker
 
