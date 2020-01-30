@@ -19,12 +19,12 @@ logger = logging.getLogger(__name__)
 
 RunResult = namedtuple('RUN_RESULT', 'success returncode output errors exception processobj outfile errfile')
 
-def shorten(output):
-    if MAX_OUTPUT == 0:
+def shorten(output, max_len = MAX_OUTPUT):
+    if max_len == 0:
         return output
 
-    if len(output) > MAX_OUTPUT:
-        return "*** PARTIAL OUTPUT ***\n" + output[-MAX_OUTPUT:]
+    if len(output) > max_len:
+        return "*** PARTIAL OUTPUT ***\n" + output[-max_len:]
 
     return output
 

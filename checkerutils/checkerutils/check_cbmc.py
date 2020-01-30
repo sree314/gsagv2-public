@@ -76,6 +76,9 @@ class Preprocessor(object):
                 elif x['name'] == 'PostconditionTransformer':
                     print(f"INFO: Adding {x['name']}", file=sys.stderr)
                     xformers.append(cxform.PostconditionTransformer(x))
+                elif x['name'] == 'PreconditionTransformer':
+                    print(f"INFO: Adding {x['name']}", file=sys.stderr)
+                    xformers.append(cxform.PreconditionTransformer(x))
                 else:
                     assert False, "Unknown transformer: '%s'" % (x['name'],)
 
@@ -151,6 +154,9 @@ class Preprocessor(object):
                         out.append("--%s" % k)
                         out.append(str(v))
 
+        if args.json_ui:
+            out.append("--json-ui")
+
         cmdline = ["cbmc", inputfile] + out
         print("INFO: Running %s" % (' '.join(cmdline)))
 
@@ -162,12 +168,20 @@ class Preprocessor(object):
                 print(output.decode('utf-8'))
                 print(">>>=== CBMC Output End ===<<<")
 
+            if args.output:
+                with open(args.output, "wb") as f:
+                    f.write(output)
+
             return True
         except subprocess.CalledProcessError as e:
             print("FAILURE: Test failed")
             print("ERROR: Command failed: Return code '%s'" % (e.returncode,), 
                   file=sys.stderr)
             print("\tOutput was:\n>>>=== CBMC Output ===<<<\n%s>>>=== CBMC Output End ===<<<\n\n" % (e.output.decode('utf-8'),), file=sys.stderr)
+
+            if args.output:
+                with open(args.output, "wb") as f:
+                    f.write(e.output)
             return False
 
     def check(self, preserve_output = False):
@@ -192,6 +206,8 @@ if __name__ == "__main__":
     p.add_argument("cfile", help="File to check")
     p.add_argument("preprocessoryaml", help="Preprocessing instructions")
     p.add_argument("--keep", action="store_true", help="Keep temporary output")
+    p.add_argument("--json-ui", action="store_true", help="Use JSON UI")
+    p.add_argument("-o", dest="output", help="Output file for cbmc output")
     p.add_argument("-q", dest="quiet", action="store_true", help="Don't show cbmc output")
 
     args = p.parse_args()

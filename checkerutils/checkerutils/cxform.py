@@ -5,7 +5,7 @@ import pycparser
 from pycparser import c_generator, c_ast, parse_file
 
 class Transformer(object):
-    def matches(self, node):
+    def matches(self, node, context = None):
         return False
 
     def transform(self, node):
@@ -14,7 +14,7 @@ class Transformer(object):
 class PrintfTransformer(Transformer):
     xform_name = 'printfX'
 
-    def matches(self, node):
+    def matches(self, node, context = None):
         if isinstance(node, c_ast.FuncCall) and isinstance(node.name, c_ast.ID):
             return node.name.name == 'printf'
 
@@ -26,18 +26,47 @@ class PostconditionTransformer(Transformer):
     def __init__(self, args):
         ct = args.get('condition_text', args["condition"])
         condition = f"__CPROVER_assert({args['condition']}, \"{ct}\");"
+        self.function = args['function']
 
         p = pycparser.c_parser.CParser()
         code = "void anon() {" + condition + "}"
         code_ast = p.parse(code, filename="<insert.c>")
         self.code_ast = code_ast.ext[0].body.block_items
 
-    def matches(self, node):
-        return isinstance(node, c_ast.Return)
+    def matches(self, node, context = None):
+        return context['function'] == self.function and isinstance(node, c_ast.Return)
 
     def transform(self, node):
         y = c_ast.Compound([x for x in self.code_ast] + [node])
         return y
+
+class PreconditionTransformer(Transformer):
+    def __init__(self, args):
+        self.function = args['function']
+
+        if 'condition' in args:
+            conditions = [args['condition']]
+        elif 'conditions' in args:
+            conditions = args['conditions']
+
+        condition = []
+        for c in conditions:
+            condition.append(f"__CPROVER_assume({c});")
+
+        condition = "\n".join(condition)
+
+        p = pycparser.c_parser.CParser()
+        code = "void anon() {" + condition + "}"
+        code_ast = p.parse(code, filename="<insert.c>")
+        self.code_ast = code_ast.ext[0].body.block_items
+
+    def matches(self, node, context = None):
+        return self.function == context['function'] and isinstance(node, c_ast.FuncDef)
+
+    def transform(self, node):
+        for c in reversed(self.code_ast):
+            node.body.block_items.insert(0, c)
+        return node
 
 # rather stupid way ...
 class ASTTransformer(c_generator.CGenerator):
@@ -46,6 +75,7 @@ class ASTTransformer(c_generator.CGenerator):
         self.seen = set()
         super(ASTTransformer).__init__()
         self.indent_level = 0
+        self.function = None
 
     def visit(self, node):
         if node in self.seen:
@@ -53,19 +83,28 @@ class ASTTransformer(c_generator.CGenerator):
 
         self.seen.add(node)
 
+        func_set = False
+        if isinstance(node, c_ast.FuncDef):
+            self.function = node.decl.name
+            func_set = True
+
+        context = {'function': self.function}
         nn = node
         for xf in self.xformers:
-            if xf.matches(node):
+            if xf.matches(node, context):
                 nn = xf.transform(node)
                 break
 
         if nn is not None: # node got deleted
             if not isinstance(nn, list):
-                return super(ASTTransformer, self).visit(nn)
+                t =super(ASTTransformer, self).visit(nn)
+                if func_set: self.function = None
+                return t
             else:
                 # TODO
                 pass
         else:
+            if func_set: self.function = None
             return ''
 
 
