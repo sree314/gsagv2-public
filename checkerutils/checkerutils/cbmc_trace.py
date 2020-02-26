@@ -49,7 +49,14 @@ class CBMCTrace(object):
             self.json = jsond
         else:
             with open(jsonfile, "rb") as f:
-                self.json = json.load(f)
+                try:
+                    self.json = json.load(f)
+                except json.JSONDecodeError as e:
+                    errmsg_dict = {
+                                    "messageType": "ERROR",
+                                    "messageText": f"[line {e.lineno} column {e.colno} (char {e.pos})] Failed to read {e.doc} as JSON\n {e.msg}"
+                                }
+                    self.json = json.JSONEncoder().encode(errmsg_dict)
 
         self._result = None
 
@@ -71,6 +78,22 @@ class CBMCTrace(object):
         for x in self.json:
             if "messageType" in x and x["messageType"] == "ERROR":
                 yield x
+
+    def json_to_text(self, out = None):
+        """Convert JSON output to text format"""
+
+        if out is None:
+            out = []
+
+        for j in self.json:
+            if "messageType" in j and j["messageType"] in ("STATUS-MESSAGE", "ERROR"):
+                out.append(j["messageText"])
+            elif "result" in j:
+                for res in j['result']:
+                    out.append(f"({res['property']}): {res['description']}: {res['status']}")
+                    # ignore trace for now
+
+        return out
 
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description="Parse CBMC JSON output")

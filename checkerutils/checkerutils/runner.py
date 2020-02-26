@@ -104,6 +104,7 @@ def run_timeout(timeout_s, cmd, *args, **kwargs):
     logger.info(f"Running {command}")
     x = run(command, *args, **kwargs)
     if x.returncode == 124:
-        x.output = x.output + "*** TIMEOUT ***\n"
+        #x.output = x.output + "*** TIMEOUT ***\n"
+        pass
 
     return x

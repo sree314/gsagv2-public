@@ -136,14 +136,19 @@ class Preprocessor(object):
             print("WARNING: No `cbmc' section found, using defaults", file=sys.stderr)
             out = []
         else:
-            translate = {'cstd': {'c99': '--c99',
-                                  # TODO
-                                  }}
+            translate = {'cstd': {'c99': '--c99'},
+                         'define': {None: '-D'}}
 
             out = []
             for k, v in self.pp['cbmc'].items():
                 if k in translate:
-                    out.append(translate[k][v])
+                    if v in translate[k]:
+                        out.append(translate[k][v])
+                    elif None in translate[k]:
+                        out.append(f"{translate[k][None]}")
+                        out.append(v)
+                    else:
+                        assert False, k
                 else:
                     k = k.replace("_", "-")
                     if v == True:
@@ -151,7 +156,10 @@ class Preprocessor(object):
                     elif v == False:
                         out.append("--no-%s" % (k,))
                     else:
-                        out.append("--%s" % k)
+                        if len(k) == 1:
+                            out.append("-%s" % k)
+                        else:
+                            out.append("--%s" % k)
                         out.append(str(v))
 
         if args.json_ui:
