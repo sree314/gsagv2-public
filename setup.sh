@@ -12,9 +12,8 @@ apt-get install -y cbmc z3
 
 chmod +x /autograder/source/scripts/*.py
 
-wget http://mirrors.kernel.org/ubuntu/pool/universe/c/cbmc/cbmc_5.10-5_amd64.deb
-
-dpkg -i cbmc_5.10-5_amd64.deb
+CBMC=cbmc_5.10-5ubuntu1_amd64.deb
+wget http://mirrors.kernel.org/ubuntu/pool/universe/c/cbmc/$CBMC && dpkg -i $CBMC
 
 if [ -f /autograder/source/assignment/setup_assignment.sh ]; then
 	source /autograder/source/assignment/setup_assignment.sh
