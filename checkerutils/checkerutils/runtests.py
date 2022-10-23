@@ -10,9 +10,9 @@
 
 import tempfile
 import os
-import cbmc_trace
+from . import cbmc_trace
 import types
-import runner
+from . import runner
 import logging
 
 logger = logging.getLogger(__name__)
@@ -121,6 +121,10 @@ class CBMCRunTest(RunTest):
         return runner.shorten(self.rr.errors, self.max_output)
 
     def debug_output(self):
+        if self.rr.returncode == 124:
+            # timeout
+            return ""
+
         if not self.cj:
             self.cj = cbmc_trace.CBMCTrace(jsonfile=self.args['json'])
 
@@ -133,7 +137,12 @@ class CBMCRunTest(RunTest):
 
         return "\n".join(out)
 
+    def get_trace(self):
+        if self.rr.returncode == 124:
+            return []
 
+        x = cbmc_trace.get_trace(self.args['json'], self.args['src'])
+        return x
 
 if __name__ == "__main__":
     import gs
