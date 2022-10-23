@@ -95,33 +95,22 @@ class CBMCTrace(object):
 
         return out
 
-if __name__ == "__main__":
-    p = argparse.ArgumentParser(description="Parse CBMC JSON output")
-
-    p.add_argument("jsonfile", help="JSON File")
-    p.add_argument("srcfile", help="Source file for checker File")
-    p.add_argument("outputjson", help="Output file containing results")
-
-    args = p.parse_args()
-
-    with open(args.jsonfile, "rb") as f:
+def get_trace(jsonfile, srcfile):
+    with open(jsonfile, "rb") as f:
         j = json.load(f)
 
-    record_fn = get_record_locations(args.srcfile)
+    record_fn = get_record_locations(srcfile)
 
     if len(record_fn) == 0:
-        print(f"WARNING: No //@begin and //@record found in {args.srcfile}", file=sys.stderr)
-
-    srcfile = os.path.basename(args.srcfile)
+        print(f"WARNING: No //@begin and //@record found in {srcfile}", file=sys.stderr)
 
     out = []
     ct = CBMCTrace(j)
     for r in ct.get_results():
-        print(f"{r['property']}: {r['description']}: {r['status']}")
-
         test = {'property': r['property'],
                 'description': r['description'],
-                'status': r['status']}
+                'status': r['status'],
+                }
 
         if r['status'] == "FAILURE":
             function_depth = 0
@@ -167,6 +156,28 @@ if __name__ == "__main__":
             test['output'] = counter_example
 
         out.append(test)
+
+    return out
+
+if __name__ == "__main__":
+    p = argparse.ArgumentParser(description="Parse CBMC JSON output")
+
+    p.add_argument("jsonfile", help="JSON File")
+    p.add_argument("srcfile", help="Source file for checker File")
+    p.add_argument("outputjson", help="Output file containing results")
+
+    args = p.parse_args()
+
+    with open(args.jsonfile, "rb") as f:
+        j = json.load(f)
+
+    record_fn = get_record_locations(args.srcfile)
+
+    if len(record_fn) == 0:
+        print(f"WARNING: No //@begin and //@record found in {args.srcfile}", file=sys.stderr)
+
+    srcfile = args.srcfile
+    out = get_trace(args.jsonfile, srcfile)
 
     with open(args.outputjson, "w") as f:
         f.write(json.dumps(out, indent=4))
