@@ -45,6 +45,9 @@ def run(cmd, *args, **kwargs):
     hout = None
     herr = None
 
+    output = None
+    errors = None
+
     try:
         if 'stdin' not in kwargs:
             kwargs['stdin'] = subprocess.DEVNULL
