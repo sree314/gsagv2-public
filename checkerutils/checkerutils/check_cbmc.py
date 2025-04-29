@@ -165,6 +165,8 @@ class Preprocessor(object):
         if args.json_ui:
             out.append("--json-ui")
 
+        out.append("--no-standard-checks") # CBMC 6
+
         cmdline = ["cbmc", inputfile] + out
         print("INFO: Running %s" % (' '.join(cmdline)))
 
