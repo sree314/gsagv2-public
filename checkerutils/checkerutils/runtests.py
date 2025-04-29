@@ -69,10 +69,18 @@ class RunTest(object):
         return False
 
     def get_runner_output_for_log(self):
-        return runner.shorten(self.rr.output, self.max_output)
+        if self.rr.output is not None:
+            return runner.shorten(self.rr.output, self.max_output)
+        else:
+            # runner used custom output and we don't have access to it
+            return "NONE"
 
     def get_runner_errors_for_log(self):
-        return runner.shorten(self.rr.errors, self.max_output)
+        if self.rr.errors is not None:
+            return runner.shorten(self.rr.errors, self.max_output)
+        else:
+            # runner used custom output and we don't have access to it
+            return "NONE"
 
     def debug_output(self):
         """Return output to be shown to the user when a test fails."""
