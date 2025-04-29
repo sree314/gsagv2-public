@@ -19,6 +19,7 @@ def test_package_py(env, ziproot):
         return True
     else:
         logger.error(f"Couldn't find {sd}.")
+        env.results.score = 0 # needed for new gs format
         env.results.add_output("package.py sanity check failed. No PACKAGER-INFO.txt found. Did you use package.py to prepare this submission?")
         return False
 
