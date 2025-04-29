@@ -11,6 +11,9 @@
 import json
 import os
 from pathlib import Path
+import logging
+
+logger = logging.getLogger(__name__)
 
 # visibility for test cases
 VIS_HIDDEN = "hidden" # never shown to students
@@ -54,11 +57,18 @@ class GSTest(object):
         self.tags = []
         self.visibility = None
         self.extra_data = dict()
+        self.passed = None
         self._status = None
         if output != "": self.add_output(output)
 
     def success(self):
         return self._status == STATUS_SUCCESS
+
+    def incr_score(self, value = 1):
+        assert self.score + value <= self.max_score # TODO, extra credit?
+
+        self.score += value
+        logger.debug(f'Score for {self.name} is now {self.score}')
 
     def add_output(self, output):
         self.output.append(output)
@@ -73,13 +83,15 @@ class GSTest(object):
         out = {}
 
         for a in ['name', 'score', 'max_score', 'number', 'output',
-                  'tags', 'visibility', 'extra_data']:
+                  'tags', 'visibility', 'extra_data', 'passed']:
             v = getattr(self, a)
             if v is not None:
                 if a == 'output':
                     if len(v): out['output'] = "\n".join(v)
                 elif a in ('tags', 'extra_data'):
                     if len(v): out[a] = v
+                elif a == 'passed':
+                    out['status'] = 'passed' if v else 'failed'
                 else:
                     out[a] = v
 
@@ -125,8 +137,8 @@ class GSResults(object):
         #TODO: check for errors in results.json file
         if 'score' not in d and 'tests' in d:
             for t in d['tests']:
-                if 'score' not in t:
-                    raise ValueError('results.json does not contain scores')
+                if 'score' not in t and 'status' not in t:
+                    raise ValueError(f'results.json does not contain scores or status for {t["name"]}')
 
         # improve UI
         if 'tests' in d:
@@ -141,7 +153,7 @@ class GSResults(object):
                     elif v == VIS_HIDDEN:
                         v = "Hidden"
 
-                    t['name'] = t['name'] + f"(Visibility: {v})"
+                    t['name'] = t['name'] + f" (Visibility: {v})"
 
         return json.dumps(d, indent=4)
 
